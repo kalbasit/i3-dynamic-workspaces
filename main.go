@@ -23,12 +23,38 @@ import (
 	"strings"
 )
 
+type item struct {
+	text       string
+	workspace  *i3ipc.Workspace
+	promptItem *prompt.SelectItem
+}
+
+func newItem(workspace *i3ipc.Workspace) *item {
+	return &item{
+		text:       workspace.Name,
+		workspace:  workspace,
+		promptItem: nil,
+	}
+}
+
+func (item *item) SelectText() string {
+	return item.text
+}
+
+func (item *item) SelectHighlighted(data interface{}) {}
+
+func (item *item) SelectSelected(data interface{}) {
+	i3.Command(fmt.Sprintf("workspace %s", item.text))
+	os.Exit(0)
+}
+
 var (
 	x   *xgbutil.XUtil
 	i3  *i3ipc.IPCSocket
 	err error
 
-	flagAddworkspace bool
+	flagAddworkspace    bool
+	flagSwitchworkspace bool
 )
 
 // response is the callback that gets executed whenever the user hits
@@ -64,6 +90,38 @@ func addWorkspace() {
 	xevent.Main(x)
 }
 
+func switchWorkspace() {
+	// The input box uses the keybind module, so we must initialize it.
+	keybind.Initialize(x)
+
+	slct := prompt.NewSelect(x,
+		prompt.DefaultSelectTheme, prompt.DefaultSelectConfig)
+
+	workspaces, err := i3.GetWorkspaces()
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	items := make([]*prompt.SelectItem, 0, len(workspaces))
+
+	for _, workspace := range workspaces {
+		item := newItem(&workspace)
+		item.promptItem = slct.AddChoice(item)
+
+		items = append(items, item.promptItem)
+	}
+
+	group := slct.AddGroup(slct.NewStaticGroup("Workspaces"))
+
+	groups := make([]*prompt.SelectShowGroup, 0, 1)
+	groups = append(groups, group.ShowGroup(items))
+
+	slct.Show(xwindow.RootGeometry(x), prompt.TabCompletePrefix, groups, slct)
+
+	xevent.Main(x)
+}
+
 func usage() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [flags]\n", path.Base(os.Args[0]))
 	flag.VisitAll(func(fg *flag.Flag) {
@@ -75,6 +133,8 @@ func usage() {
 
 func init() {
 	flag.BoolVar(&flagAddworkspace, "add-workspace", false, "Add a new workspace")
+	flag.BoolVar(&flagSwitchworkspace, "switch-workspace", false, "Switch to an existing workspace")
+
 	flag.Usage = usage
 }
 
@@ -93,5 +153,7 @@ func main() {
 
 	if flagAddworkspace {
 		addWorkspace()
+	} else if flagSwitchworkspace {
+		switchWorkspace()
 	}
 }
