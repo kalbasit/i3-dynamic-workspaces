@@ -31,14 +31,17 @@ import (
 	"strings"
 )
 
+var font = xgraphics.MustFont(xgraphics.ParseFont(
+	bytes.NewBuffer(readFile("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf"))))
+
 var defaultInputTheme = &prompt.InputTheme{
 	BorderSize:  5,
 	BgColor:     render.NewImageColor(color.RGBA{0xff, 0xff, 0xff, 0xff}),
 	BorderColor: render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
 	Padding:     10,
 
-	Font: xgraphics.MustFont(xgraphics.ParseFont(
-		bytes.NewBuffer(readFile("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf")))),
+	Font: font,
+
 	FontSize:   20.0,
 	FontColor:  render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
 	InputWidth: 500,
@@ -50,8 +53,8 @@ var defaultSelectTheme = &prompt.SelectTheme{
 	BorderColor: render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
 	Padding:     20,
 
-	Font: xgraphics.MustFont(xgraphics.ParseFont(
-		bytes.NewBuffer(readFile("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf")))),
+	Font: font,
+
 	FontSize:  20.0,
 	FontColor: render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
 
@@ -59,8 +62,8 @@ var defaultSelectTheme = &prompt.SelectTheme{
 	ActiveFontColor: render.NewImageColor(color.RGBA{0xff, 0xff, 0xff, 0xff}),
 
 	GroupBgColor: render.NewImageColor(color.RGBA{0xff, 0xff, 0xff, 0xff}),
-	GroupFont: xgraphics.MustFont(xgraphics.ParseFont(
-		bytes.NewBuffer(readFile("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf")))),
+	GroupFont:    font,
+
 	GroupFontSize:  25.0,
 	GroupFontColor: render.NewImageColor(color.RGBA{0x33, 0x66, 0xff, 0xff}),
 	GroupSpacing:   15,
