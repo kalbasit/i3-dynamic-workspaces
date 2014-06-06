@@ -5,14 +5,8 @@ import (
 
 	"fmt"
 
+	"github.com/eMxyzptlk/i3-dynamic-workspaces/dmenu"
 	"github.com/proxypoke/i3ipc"
-
-	"github.com/BurntSushi/xgbutil"
-	"github.com/BurntSushi/xgbutil/keybind"
-	"github.com/BurntSushi/xgbutil/xevent"
-	"github.com/BurntSushi/xgbutil/xwindow"
-
-	"github.com/BurntSushi/wingo/prompt"
 
 	"log"
 
@@ -23,104 +17,13 @@ import (
 	"strings"
 )
 
-type item struct {
-	text       string
-	workspace  *i3ipc.Workspace
-	promptItem *prompt.SelectItem
-}
-
-func newItem(workspace *i3ipc.Workspace) *item {
-	return &item{
-		text:       workspace.Name,
-		workspace:  workspace,
-		promptItem: nil,
-	}
-}
-
-func (item *item) SelectText() string {
-	return item.text
-}
-
-func (item *item) SelectHighlighted(data interface{}) {}
-
-func (item *item) SelectSelected(data interface{}) {
-	i3.Command(fmt.Sprintf("workspace %s", item.text))
-	os.Exit(0)
-}
-
 var (
-	x   *xgbutil.XUtil
 	i3  *i3ipc.IPCSocket
 	err error
 
 	flagAddworkspace    bool
 	flagSwitchworkspace bool
 )
-
-// response is the callback that gets executed whenever the user hits
-// enter (the "confirm" key). The text parameter contains the string in
-// the input box.
-func promptresponse(inp *prompt.Input, text string) {
-	i3.Command(fmt.Sprintf("workspace %s", text))
-}
-
-// canceled is the callback that gets executed whenever the prompt is canceled.
-// This can occur when the user presses escape (the "cancel" key).
-func promptcanceled(inp *prompt.Input) {
-	xevent.Quit(inp.X)
-}
-
-func addWorkspace() {
-	// The input box uses the keybind module, so we must initialize it.
-	keybind.Initialize(x)
-
-	// Creating a new input prompt is as simple as supply an X connection,
-	// a theme and a configuration. We use built in defaults here.
-	inpPrompt := prompt.NewInput(x,
-		prompt.DefaultInputTheme, prompt.DefaultInputConfig)
-
-	// Show maps the input prompt window and sets the focus. It returns
-	// immediately, and the main X event loop is started.
-	// Also, we use the root window geometry to make sure the prompt is
-	// centered in the middle of the screen. 'response' and 'canceled' are
-	// callback functions.
-	inpPrompt.Show(xwindow.RootGeometry(x),
-		"New Workspace name: ", promptresponse, promptcanceled)
-
-	xevent.Main(x)
-}
-
-func switchWorkspace() {
-	// The input box uses the keybind module, so we must initialize it.
-	keybind.Initialize(x)
-
-	slct := prompt.NewSelect(x,
-		prompt.DefaultSelectTheme, prompt.DefaultSelectConfig)
-
-	workspaces, err := i3.GetWorkspaces()
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	items := make([]*prompt.SelectItem, 0, len(workspaces))
-
-	for _, workspace := range workspaces {
-		item := newItem(&workspace)
-		item.promptItem = slct.AddChoice(item)
-
-		items = append(items, item.promptItem)
-	}
-
-	group := slct.AddGroup(slct.NewStaticGroup("Workspaces"))
-
-	groups := make([]*prompt.SelectShowGroup, 0, 1)
-	groups = append(groups, group.ShowGroup(items))
-
-	slct.Show(xwindow.RootGeometry(x), prompt.TabCompletePrefix, groups, slct)
-
-	xevent.Main(x)
-}
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [flags]\n", path.Base(os.Args[0]))
@@ -138,12 +41,36 @@ func init() {
 	flag.Usage = usage
 }
 
-func main() {
-	x, err = xgbutil.NewConn()
+func addWorkspace() {
+	workspace := dmenu.Run([]string{})
+	selectWorkspace(workspace)
+}
+
+func switchWorkspace() {
+	workspaces, err := i3.GetWorkspaces()
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+	items := make([]string, 0, len(workspaces))
+
+	for _, workspace := range workspaces {
+		item := workspace.Name
+
+		items = append(items, item)
+	}
+
+	workspace := dmenu.Run(items)
+	selectWorkspace(workspace)
+
+}
+
+func selectWorkspace(workspace string) {
+	i3.Command(fmt.Sprintf("workspace %s", workspace))
+}
+
+func main() {
 	i3, err = i3ipc.GetIPCSocket()
 	if err != nil {
 		log.Fatalln(err)
