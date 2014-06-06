@@ -1,18 +1,26 @@
 package main
 
 import (
+	"bytes"
+
 	"flag"
 
+	"image/color"
+
 	"fmt"
+
+	"io/ioutil"
 
 	"github.com/proxypoke/i3ipc"
 
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/keybind"
 	"github.com/BurntSushi/xgbutil/xevent"
+	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/BurntSushi/xgbutil/xwindow"
 
 	"github.com/BurntSushi/wingo/prompt"
+	"github.com/BurntSushi/wingo/render"
 
 	"log"
 
@@ -22,6 +30,41 @@ import (
 
 	"strings"
 )
+
+var defaultInputTheme = &prompt.InputTheme{
+	BorderSize:  5,
+	BgColor:     render.NewImageColor(color.RGBA{0xff, 0xff, 0xff, 0xff}),
+	BorderColor: render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
+	Padding:     10,
+
+	Font: xgraphics.MustFont(xgraphics.ParseFont(
+		bytes.NewBuffer(readFile("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf")))),
+	FontSize:   20.0,
+	FontColor:  render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
+	InputWidth: 500,
+}
+
+var defaultSelectTheme = &prompt.SelectTheme{
+	BorderSize:  10,
+	BgColor:     render.NewImageColor(color.RGBA{0xff, 0xff, 0xff, 0xff}),
+	BorderColor: render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
+	Padding:     20,
+
+	Font: xgraphics.MustFont(xgraphics.ParseFont(
+		bytes.NewBuffer(readFile("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf")))),
+	FontSize:  20.0,
+	FontColor: render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
+
+	ActiveBgColor:   render.NewImageColor(color.RGBA{0x0, 0x0, 0x0, 0xff}),
+	ActiveFontColor: render.NewImageColor(color.RGBA{0xff, 0xff, 0xff, 0xff}),
+
+	GroupBgColor: render.NewImageColor(color.RGBA{0xff, 0xff, 0xff, 0xff}),
+	GroupFont: xgraphics.MustFont(xgraphics.ParseFont(
+		bytes.NewBuffer(readFile("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf")))),
+	GroupFontSize:  25.0,
+	GroupFontColor: render.NewImageColor(color.RGBA{0x33, 0x66, 0xff, 0xff}),
+	GroupSpacing:   15,
+}
 
 type item struct {
 	text       string
@@ -35,6 +78,15 @@ func newItem(workspace *i3ipc.Workspace) *item {
 		workspace:  workspace,
 		promptItem: nil,
 	}
+}
+
+func readFile(fpath string) []byte {
+	content, err := ioutil.ReadFile(fpath)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return content
 }
 
 func (item *item) SelectText() string {
@@ -77,7 +129,7 @@ func addWorkspace() {
 	// Creating a new input prompt is as simple as supply an X connection,
 	// a theme and a configuration. We use built in defaults here.
 	inpPrompt := prompt.NewInput(x,
-		prompt.DefaultInputTheme, prompt.DefaultInputConfig)
+		defaultInputTheme, prompt.DefaultInputConfig)
 
 	// Show maps the input prompt window and sets the focus. It returns
 	// immediately, and the main X event loop is started.
@@ -95,7 +147,7 @@ func switchWorkspace() {
 	keybind.Initialize(x)
 
 	slct := prompt.NewSelect(x,
-		prompt.DefaultSelectTheme, prompt.DefaultSelectConfig)
+		defaultSelectTheme, prompt.DefaultSelectConfig)
 
 	workspaces, err := i3.GetWorkspaces()
 
