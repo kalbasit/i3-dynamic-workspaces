@@ -2,28 +2,58 @@ package main
 
 import (
 	"flag"
-
 	"fmt"
+	"os"
+	"path"
+	"strings"
 
 	"github.com/eMxyzptlk/i3-dynamic-workspaces/dmenu"
 	"github.com/proxypoke/i3ipc"
-
-	"log"
-
-	"os"
-
-	"path"
-
-	"strings"
 )
 
 var (
 	i3  *i3ipc.IPCSocket
 	err error
 
-	flagAddworkspace    bool
-	flagSwitchworkspace bool
+	flagSwitchworkspace          bool
+	flagMoveContainerToWorkspace bool
 )
+
+func init() {
+	flag.BoolVar(&flagSwitchworkspace,
+		"switch-workspace",
+		false,
+		"Switch to an existing workspace")
+
+	flag.BoolVar(&flagMoveContainerToWorkspace,
+		"move-container-to-workspace",
+		false,
+		"Move focused container to workspace")
+
+	flag.Usage = usage
+}
+
+func main() {
+	if i3, err = i3ipc.GetIPCSocket(); err != nil {
+		panic(err)
+	}
+
+	flag.Parse()
+
+	if (!flagSwitchworkspace && !flagMoveContainerToWorkspace) ||
+		(flagSwitchworkspace && flagMoveContainerToWorkspace) {
+		usage()
+	}
+
+	// Let's get the workspace to move to with dmenu
+	workspace := getWorkspace()
+
+	if flagMoveContainerToWorkspace {
+		moveContainerToWorkspace(workspace)
+	} else if flagSwitchworkspace {
+		selectWorkspace(workspace)
+	}
+}
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [flags]\n", path.Base(os.Args[0]))
@@ -34,23 +64,17 @@ func usage() {
 	os.Exit(1)
 }
 
-func init() {
-	flag.BoolVar(&flagAddworkspace, "add-workspace", false, "Add a new workspace")
-	flag.BoolVar(&flagSwitchworkspace, "switch-workspace", false, "Switch to an existing workspace")
-
-	flag.Usage = usage
+func moveContainerToWorkspace(workspace string) {
+	command := fmt.Sprintf("move container to workspace %s", workspace)
+	if _, err := i3.Command(command); err != nil {
+		panic(err)
+	}
 }
 
-func addWorkspace() {
-	workspace := dmenu.Run([]string{})
-	selectWorkspace(workspace)
-}
-
-func switchWorkspace() {
+func getWorkspace() string {
 	workspaces, err := i3.GetWorkspaces()
-
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 
 	items := make([]string, 0, len(workspaces))
@@ -62,25 +86,13 @@ func switchWorkspace() {
 	}
 
 	workspace := dmenu.Run(items)
-	selectWorkspace(workspace)
 
+	return workspace
 }
 
 func selectWorkspace(workspace string) {
-	i3.Command(fmt.Sprintf("workspace %s", workspace))
-}
-
-func main() {
-	i3, err = i3ipc.GetIPCSocket()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	flag.Parse()
-
-	if flagAddworkspace {
-		addWorkspace()
-	} else if flagSwitchworkspace {
-		switchWorkspace()
+	command := fmt.Sprintf("workspace %s", workspace)
+	if _, err := i3.Command(command); err != nil {
+		panic(err)
 	}
 }
