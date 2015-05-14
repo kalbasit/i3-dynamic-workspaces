@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/eMxyzptlk/i3-dynamic-workspaces/dmenu"
+	"github.com/kalbasit/i3-dynamic-workspaces/dmenu"
 	"github.com/proxypoke/i3ipc"
 )
 
