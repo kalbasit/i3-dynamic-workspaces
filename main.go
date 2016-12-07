@@ -78,7 +78,7 @@ func getWorkspace() string {
 	}
 
 	items := make([]string, 1, len(workspaces))
-	items[0] = "prev"
+	items[0] = "back_and_forth"
 
 	for _, workspace := range workspaces {
 		item := workspace.Name
