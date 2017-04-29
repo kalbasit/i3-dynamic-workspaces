@@ -1,0 +1,6 @@
+hash: 51995b504af0c392f0fba8b919ccfbd5c4c873c91dfb475715c94ffd68512971
+updated: 2017-04-29T00:32:14.779412922-07:00
+imports:
+- name: github.com/proxypoke/i3ipc
+  version: de8f6bb6b583a14ca2164f0e1a8f9bea2c7e120e
+testImports: []

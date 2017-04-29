@@ -1,0 +1,3 @@
+package: github.com/kalbasit/i3-dynamic-workspaces
+import:
+- package: github.com/proxypoke/i3ipc
