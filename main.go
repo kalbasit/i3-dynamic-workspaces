@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"strings"
@@ -35,7 +36,7 @@ func init() {
 
 func main() {
 	if i3, err = i3ipc.GetIPCSocket(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	flag.Parse()
@@ -67,14 +68,14 @@ func usage() {
 func moveContainerToWorkspace(workspace string) {
 	command := fmt.Sprintf("move container to workspace %s", workspace)
 	if _, err := i3.Command(command); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
 func getWorkspace() string {
 	workspaces, err := i3.GetWorkspaces()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	items := make([]string, 1, len(workspaces))
@@ -95,8 +96,7 @@ func getWorkspace() string {
 }
 
 func selectWorkspace(workspace string) {
-	command := fmt.Sprintf("workspace %s", workspace)
-	if _, err := i3.Command(command); err != nil {
-		panic(err)
+	if _, err := i3.Command(fmt.Sprintf("workspace %s", workspace)); err != nil {
+		log.Fatal(err)
 	}
 }
