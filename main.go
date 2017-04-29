@@ -81,9 +81,12 @@ func getWorkspace() string {
 	items[0] = "back_and_forth"
 
 	for _, workspace := range workspaces {
-		item := workspace.Name
-
-		items = append(items, item)
+		// skip focused workspace
+		if workspace.Focused {
+			continue
+		}
+		// add the item to the list of items
+		items = append(items, workspace.Name)
 	}
 
 	workspace := dmenu.Run(items)
