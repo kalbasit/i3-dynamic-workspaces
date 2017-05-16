@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	// this is the connection to i3
 	i3  *i3ipc.IPCSocket
 	err error
 

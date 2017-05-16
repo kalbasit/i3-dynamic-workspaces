@@ -10,7 +10,7 @@ import (
 func Run(list []string) string {
 	items := strings.Join(list, "\n")
 
-	dmenu := exec.Command("dmenu", "-i")
+	dmenu := exec.Command("rofi", "-dmenu")
 	dmenu.Stdin = strings.NewReader(items)
 	var out bytes.Buffer
 	dmenu.Stdout = &out
